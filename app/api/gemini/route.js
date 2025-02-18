@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import Message from "@/models/Message"; // Import the Mongoose model for messages
-import Chat from "@/models/Chat"; // Import the Mongoose model for chats
-import { connectDB } from "@/lib/db"; // Function to connect to the DB
+import Message from "@/models/Message";
+import Chat from "@/models/Chat";
+import { connectDB } from "@/lib/db";
 
 export async function POST(req) {
   try {
-    await connectDB(); // Ensure MongoDB is connected
+    await connectDB();
 
-    const { userId, message, chatId } = await req.json(); // Now also expect userId in the body
+    const { userId, message, chatId } = await req.json();
 
     if (!message) {
       return NextResponse.json(
@@ -16,32 +16,30 @@ export async function POST(req) {
       );
     }
 
-    // If no chatId is provided, create a new chat
     let chat;
+    let newChat = false;
     if (!chatId) {
       chat = new Chat({ userId, messages: [] });
-      await chat.save(); // Save the new chat to the database
+      await chat.save();
+      newChat = true;
     } else {
-      chat = await Chat.findById(chatId); // Find the existing chat
+      chat = await Chat.findById(chatId);
       if (!chat) {
         return NextResponse.json({ error: "Chat not found" }, { status: 404 });
       }
     }
 
-    // Store user message in MongoDB
     const userMessage = await Message.create({
       msg: message,
       user_msg: true,
       ai_msg: false,
-      chatId: chat._id, // Associate with the correct chat
+      chatId: chat._id,
     });
 
-    // Add the message to the chat's messages array
     await Chat.findByIdAndUpdate(chat._id, {
-      $push: { messages: userMessage._id }, // Add the message to the chat's message array
+      $push: { messages: userMessage._id },
     });
 
-    // Make a request to the AI service
     const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
@@ -54,7 +52,7 @@ export async function POST(req) {
             role: "user",
             parts: [
               {
-                text: `Please provide a structured response using bullet points:\n\n${message}`,
+                text: `apologize if the messgaes comes of other topic rather than mental health, just give the response of mental health \n\n${message}`,
               },
             ],
           },
@@ -63,24 +61,29 @@ export async function POST(req) {
     });
 
     const data = await response.json();
+    console.log(data); // Check the full response object
+
     const aiResponse =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "No response received";
 
-    // Store AI response in MongoDB
     const aiMessage = await Message.create({
       msg: aiResponse,
       user_msg: false,
       ai_msg: true,
-      chatId: chat._id, // Associate with the correct chat
+      chatId: chat._id,
     });
 
-    // Add the AI response to the chat's messages array
     await Chat.findByIdAndUpdate(chat._id, {
-      $push: { messages: aiMessage._id }, // Add AI response to the chat
+      $push: { messages: aiMessage._id },
     });
 
-    return NextResponse.json({ message: "done", response: aiResponse });
+    return NextResponse.json({
+      message: "done",
+      response: aiResponse,
+      chatId: chat._id, // Always send chatId
+      newChat,
+    });
   } catch (error) {
     console.error("API Request Failed:", error);
     return NextResponse.json({ message: "error", error: error.message });
@@ -89,6 +92,8 @@ export async function POST(req) {
 
 export async function GET(req) {
   try {
+    await connectDB();
+
     const chatId = req.nextUrl.searchParams.get("chatId");
 
     if (!chatId) {
@@ -98,14 +103,13 @@ export async function GET(req) {
       );
     }
 
-    // Fetch the chat with the given chatId and populate the messages
     const chat = await Chat.findById(chatId).populate("messages");
 
     if (!chat) {
       return NextResponse.json({ error: "Chat not found" }, { status: 404 });
     }
 
-    return NextResponse.json(chat.messages);
+    return NextResponse.json({ chatId: chat._id, messages: chat.messages });
   } catch (error) {
     console.error("API Request Failed:", error);
     return NextResponse.json({ message: "error", error: error.message });
