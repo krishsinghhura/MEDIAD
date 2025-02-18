@@ -4,9 +4,8 @@ import styles from "./Signup.module.css";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
-
 export default function SignUp() {
-  const router = useRouter();  
+  const router = useRouter();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -24,21 +23,23 @@ export default function SignUp() {
     e.preventDefault();
     // Add form validation logic here
     console.log("Form Submitted", formData);
-    
-    const res = await fetch("/api/signup",{
-       method : "POST",
-       headers : {"content-Type" : "application/json"},
-       body : JSON.stringify(formData),
-    })
 
-    const data = await res.json();
-
-    if(res.ok){
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
         toast.success("User created successfully");
-        router.push('/login');
-    }else{
+        router.push("/login");
+      } else {
         toast.error("Error occured");
         console.log(error);
+      }
+    } catch (error) {
+      console.log(error.message);
     }
   };
 
@@ -47,19 +48,63 @@ export default function SignUp() {
       <form onSubmit={handleSubmit} className={styles.form}>
         <h2 className={styles.title}>Sign Up</h2>
 
-        <input type="text" name="fullName" placeholder="Full Name" onChange={handleChange} className={styles.input} required />
+        <input
+          type="text"
+          name="fullName"
+          placeholder="Full Name"
+          onChange={handleChange}
+          className={styles.input}
+          required
+        />
 
-        <input type="email" name="email" placeholder="Email" onChange={handleChange} className={styles.input} required />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          onChange={handleChange}
+          className={styles.input}
+          required
+        />
 
-        <input type="number" name="age" placeholder="Age" onChange={handleChange} className={styles.input} required />
+        <input
+          type="number"
+          name="age"
+          placeholder="Age"
+          onChange={handleChange}
+          className={styles.input}
+          required
+        />
 
-        <input type="tel" name="contactNo" placeholder="Contact No" onChange={handleChange} className={styles.input} required />
+        <input
+          type="tel"
+          name="contactNo"
+          placeholder="Contact No"
+          onChange={handleChange}
+          className={styles.input}
+          required
+        />
 
-        <input type="password" name="password" placeholder="Password" onChange={handleChange} className={styles.input} required />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          onChange={handleChange}
+          className={styles.input}
+          required
+        />
 
-        <input type="password" name="confirmPassword" placeholder="Confirm Password" onChange={handleChange} className={styles.input} required />
+        <input
+          type="password"
+          name="confirmPassword"
+          placeholder="Confirm Password"
+          onChange={handleChange}
+          className={styles.input}
+          required
+        />
 
-        <button type="submit" className={styles.button}>Sign Up</button>
+        <button type="submit" className={styles.button}>
+          Sign Up
+        </button>
       </form>
     </div>
   );
