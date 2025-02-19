@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Chat from "@/models/Chat";
+import Message from "@/models/Message";
 import { connectDB } from "@/lib/db";
 
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -67,7 +68,7 @@ async function getSummaryFromGemini(userMessage, botMessage) {
             role: "user",
             parts: [
               {
-                text: `reading the above conversation describe how is the mental health of the user and make your response very lengthy and big: \n\nUser: ${userMessage}\nBot: ${botMessage}`,
+                text: `reading the above conversation describe how is the mental health of the user, return the response in json analyzing the stress, peace, anxiety, depression of the user as i will be creating a table with the data, additonally generate a lengthy paragraph by analazying the data: \n\nUser: ${userMessage}\nBot: ${botMessage}`,
               },
             ],
           },
