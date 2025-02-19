@@ -68,7 +68,7 @@ async function getSummaryFromGemini(userMessage, botMessage) {
             role: "user",
             parts: [
               {
-                text: `reading the above conversation describe how is the mental health of the user, return the response in json analyzing the stress, peace, anxiety, depression of the user as i will be creating a table with the data, additonally generate a lengthy paragraph by analazying the data: \n\nUser: ${userMessage}\nBot: ${botMessage}`,
+                text: `reading the above conversation describe how is the mental health of the user, return the response in json analyzing the stress, peace, anxiety, depression of the user as i will be creating a table with the data, additonally generate a lengthy paragraph by analazying the data which will be in the json as well, make the json raw dont use triple backticks give it in string, important return the json data in string: \n\nUser: ${userMessage}\nBot: ${botMessage}`,
               },
             ],
           },
