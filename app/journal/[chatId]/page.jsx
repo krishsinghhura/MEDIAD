@@ -22,7 +22,6 @@ export default function SummaryCharts() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Extract userId from URL
         const path = window.location.pathname;
         const segments = path.split("/");
         const userId = segments[segments.length - 1];
@@ -34,21 +33,17 @@ export default function SummaryCharts() {
           return;
         }
 
-        // Fetch summary data
         const response = await axios.get(`/api/get-chats?userId=${userId}`);
-
         let summaryData = response.data.summary;
 
         if (typeof summaryData === "string") {
           summaryData = summaryData.trim();
-
           if (
             summaryData.startsWith("```json") &&
             summaryData.endsWith("```")
           ) {
             summaryData = summaryData.replace(/^```json|```$/g, "").trim();
           }
-
           try {
             summaryData = JSON.parse(summaryData);
           } catch (error) {
@@ -57,9 +52,12 @@ export default function SummaryCharts() {
           }
         }
 
-        setSummary(
-          summaryData && typeof summaryData === "object" ? summaryData : null
-        );
+        if (summaryData && typeof summaryData === "object") {
+          setSummary(summaryData);
+          await storeOnPinata(userId, summaryData); // Store data on Pinata
+        } else {
+          setSummary(null);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         setSummary(null);
@@ -70,6 +68,44 @@ export default function SummaryCharts() {
 
     fetchData();
   }, []);
+
+  const storeOnPinata = async (userId, summaryData) => {
+    try {
+      const response = await axios.post(
+        "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        {
+          summary: summaryData,
+          userId: userId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`,
+          },
+        }
+      );
+
+      const cid = response.data.IpfsHash; // Extract CID
+      if (cid) {
+        await storeCIDOnBlockchain(cid); // Push CID to blockchain
+      }
+    } catch (error) {
+      console.error(
+        "Error storing data on Pinata:",
+        error.response?.data || error
+      );
+    }
+  };
+
+  const storeCIDOnBlockchain = async (cid) => {
+    try {
+      const response = await axios.post("/api/store-cid", { cid });
+    } catch (error) {
+      console.error(
+        "Error pushing CID to blockchain:",
+        error.response?.data || error
+      );
+    }
+  };
 
   if (loading) {
     return <div className="text-white p-6">Loading...</div>;
@@ -90,17 +126,13 @@ export default function SummaryCharts() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-white p-6">
-      {/* Left side text */}
       <div className="w-1/2 p-6 text-lg">
         <h1 className="text-2xl font-bold mb-4">Summary</h1>
         <p>
           <strong>Analysis:</strong> {summary.analysis}
         </p>
       </div>
-
-      {/* Right side charts */}
       <div className="w-1/2 flex flex-col items-center">
-        {/* Pie Chart */}
         <ResponsiveContainer width="80%" height={250}>
           <PieChart>
             <Pie
@@ -121,8 +153,6 @@ export default function SummaryCharts() {
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>
-
-        {/* Small Bar Chart */}
         <ResponsiveContainer width="80%" height={150}>
           <BarChart data={data}>
             <XAxis dataKey="name" stroke="#fff" />

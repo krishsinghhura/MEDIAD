@@ -1,78 +1,70 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation"; // Import useParams
-import { jwtDecode } from "jwt-decode"; // Import jwtDecode
+import { useRouter, useParams } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
 import Sidebar from "@/components/Sidebar/page";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [userId, setUserId] = useState(null);
-  const [chats, setChats] = useState([]); // To store the list of chats
+  const [chats, setChats] = useState([]);
   const router = useRouter();
-  const { chatId } = useParams(); // Extract chatId from URL
+  const { chatId } = useParams();
 
-  // Fetch the userId from the token
   useEffect(() => {
     const fetchToken = async () => {
-      const res = await fetch("/api/get-token");
-      const data = await res.json();
-      const decoded = jwtDecode(data.token);
-      setUserId(decoded.userId);
+      try {
+        const res = await fetch("/api/get-token");
+        const data = await res.json();
+        const decoded = jwtDecode(data.token);
+        setUserId(decoded.userId);
+      } catch (error) {
+        console.error("Error fetching token:", error);
+      }
     };
-
     fetchToken();
   }, []);
 
-  // Fetch all chats
   useEffect(() => {
+    if (!userId) return;
+
     const fetchChats = async () => {
       try {
-        const res = await fetch(`/api/get-chats?userId=${userId}`); // Fetch chats for the user
+        const res = await fetch(`/api/get-chats?userId=${userId}`);
         const data = await res.json();
-        if (Array.isArray(data.chats)) {
-          setChats(data.chats);
-        }
+        if (Array.isArray(data.chats)) setChats(data.chats);
       } catch (error) {
         console.error("Error fetching chats:", error);
       }
     };
 
-    if (userId) {
-      fetchChats();
-    }
+    fetchChats();
   }, [userId]);
 
-  // Fetch chat history for a specific chat
   useEffect(() => {
     if (!chatId) return;
 
     const fetchChatHistory = async () => {
       try {
-        const response = await fetch(`/api/gemini?chatId=${chatId}`, {
-          method: "GET",
-        });
+        const res = await fetch(`/api/gemini?chatId=${chatId}`);
+        const data = await res.json();
 
-        const data = await response.json();
-
-        if (Array.isArray(data.messages) && data.messages.length > 0) {
+        if (Array.isArray(data.messages)) {
           const formattedMessages = data.messages.map((msg) => ({
             text: msg.msg,
             sender: msg.ai_msg ? "bot" : "user",
           }));
           setMessages(formattedMessages);
-        } else {
-          console.warn("No previous chat found.");
         }
       } catch (error) {
-        console.error("Error fetching previous chat:", error);
+        console.error("Error fetching chat history:", error);
       }
     };
 
     fetchChatHistory();
   }, [chatId]);
 
-  // Handle sending messages
   const handleSendMessage = async () => {
     if (!input.trim() || !userId) return;
 
@@ -85,15 +77,13 @@ export default function ChatPage() {
         .map((msg) => `${msg.sender === "user" ? "User" : "Bot"}: ${msg.text}`)
         .join("\n");
 
-      const fullMessage = `${chatHistoryString}\nUser: ${input}`;
-
       const response = await fetch("/api/gemini", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
-          chatId, // Use chatId from URL
-          message: fullMessage,
+          chatId,
+          message: `${chatHistoryString}\nUser: ${input}`,
         }),
       });
 
@@ -104,8 +94,6 @@ export default function ChatPage() {
           ...prev,
           { text: data.response, sender: "bot" },
         ]);
-      } else {
-        console.error("No valid AI response received:", data);
       }
     } catch (error) {
       console.error("Error fetching response:", error);
@@ -114,41 +102,36 @@ export default function ChatPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <Sidebar chats={chats} />
-
-      {/* ChatBox */}
       <div className="flex-1 bg-blue-100 text-gray-800 p-6">
         <h1 className="text-3xl font-bold text-sky-700 mb-4">
           Mental Health Chat
         </h1>
-
         <div className="w-full max-w-2xl bg-white shadow-lg rounded-lg p-4 h-96 overflow-y-auto">
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`p-2 my-1 rounded-md ${
+              className={`p-2 my-1 rounded-md w-fit max-w-[80%] ${
                 msg.sender === "user"
-                  ? "bg-blue-500 text-white self-end"
-                  : "bg-gray-300 text-black self-start"
+                  ? "ml-auto bg-blue-500 text-white"
+                  : "mr-auto bg-gray-300 text-black"
               }`}
             >
               {msg.text}
             </div>
           ))}
         </div>
-
         <div className="w-full max-w-2xl flex mt-4">
           <input
             type="text"
-            className="flex-1 p-2 border border-gray-300 rounded-l-md"
+            className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
           />
           <button
             onClick={handleSendMessage}
-            className="bg-blue-500 text-white px-4 py-2 rounded-r-md"
+            className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 transition"
           >
             Send
           </button>

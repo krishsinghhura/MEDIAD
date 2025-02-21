@@ -1,18 +1,20 @@
 "use client";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const links = [
   { id: 1, title: "Home", url: "/" },
   { id: 2, title: "Chat", url: "/chat" },
   { id: 3, title: "Dashboard", url: "/dashboard" },
-  { id: 4, title: "Reports", url: "/reports" },
+  { id: 4, title: "Reports", url: "/journals" },
   { id: 5, title: "About", url: "/about" },
   { id: 6, title: "Contact", url: "/contact" },
   { id: 7, title: "Sign-up", url: "/Signup" },
 ];
 
 const Navbar = () => {
+  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -30,7 +32,7 @@ const Navbar = () => {
   const handleLogOut = async () => {
     await fetch("/api/logout", { method: "POST" });
     setIsLoggedIn(true);
-    alert("User logged out");
+    router.push("/login");
   };
 
   return (
@@ -40,17 +42,19 @@ const Navbar = () => {
       </Link>
       <div className="hidden md:flex space-x-6">
         {links.map((link) => (
-          <Link 
-            key={link.id} 
-            href={link.url} 
-            className="text-lg text-gray-700 hover:text-sky-600 transition">
+          <Link
+            key={link.id}
+            href={link.url}
+            className="text-lg text-gray-700 hover:text-sky-600 transition"
+          >
             {link.title}
           </Link>
         ))}
       </div>
-      <button 
-        onClick={handleLogOut} 
-        className="px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition">
+      <button
+        onClick={handleLogOut}
+        className="px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition"
+      >
         Logout
       </button>
     </nav>

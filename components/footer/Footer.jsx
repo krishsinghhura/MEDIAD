@@ -1,10 +1,11 @@
-import React from 'react'
-import styles from "./footer.module.css"
+import React from "react";
 
 const Footer = () => {
   return (
-    <div className={styles.container}>2024 vick.All rights reserved</div>
-  )
-}
+    <div className="w-full bg-gray-900 text-white text-center py-4 text-sm">
+      2024 Vick. All rights reserved.
+    </div>
+  );
+};
 
-export default Footer
+export default Footer;

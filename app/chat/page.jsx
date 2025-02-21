@@ -1,18 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // Import useRouter
-import { jwtDecode } from "jwt-decode"; // Import jwtDecode
+import { useRouter } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
 import Sidebar from "@/components/Sidebar/page";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [userId, setUserId] = useState(null);
-  const [chatId, setChatId] = useState(null); // Store chatId
-  const [chats, setChats] = useState([]); // To store the list of chats
-  const router = useRouter(); // Initialize router
+  const [chatId, setChatId] = useState(null);
+  const [chats, setChats] = useState([]);
+  const router = useRouter();
 
-  // Fetch the userId from the token
   useEffect(() => {
     const fetchToken = async () => {
       const res = await fetch("/api/get-token");
@@ -20,31 +19,25 @@ export default function ChatPage() {
       const decoded = jwtDecode(data.token);
       setUserId(decoded.userId);
     };
-
     fetchToken();
   }, []);
 
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await fetch(`/api/get-chats?userId=${userId}`); // Fetch chats for the user
+        const res = await fetch(`/api/get-chats?userId=${userId}`);
         const data = await res.json();
-        if (Array.isArray(data.chats)) {
-          setChats(data.chats);
-        }
+        if (Array.isArray(data.chats)) setChats(data.chats);
       } catch (error) {
         console.error("Error fetching chats:", error);
       }
     };
 
-    if (userId) {
-      fetchChats();
-    }
+    if (userId) fetchChats();
   }, [userId]);
 
-  // Handle sending messages
   const handleSendMessage = async () => {
-    if (!input.trim() || !userId) return; // Don't send if no input or userId
+    if (!input.trim() || !userId) return;
 
     const newMessage = { text: input, sender: "user" };
     setMessages((prev) => [...prev, newMessage]);
@@ -60,19 +53,14 @@ export default function ChatPage() {
       const response = await fetch("/api/gemini", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          chatId, // Send existing chatId (null if first time)
-          message: fullMessage,
-        }),
+        body: JSON.stringify({ userId, chatId, message: fullMessage }),
       });
 
       const data = await response.json();
 
       if (data.chatId && !chatId) {
-        // Store chatId only if it's newly created
         setChatId(data.chatId);
-        router.push(`/chat/${data.chatId}`); // Redirect to chat/:id
+        router.push(`/chat/${data.chatId}`);
       }
 
       if (data.response) {
@@ -89,7 +77,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-100 text-gray-800 flex">
+    <div className="min-h-screen flex bg-blue-100 text-gray-800">
       <Sidebar chats={chats} />
 
       <div className="flex-1 p-6">
@@ -101,10 +89,10 @@ export default function ChatPage() {
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`p-2 my-1 rounded-md ${
+              className={`p-2 my-1 rounded-md w-fit max-w-[80%] ${
                 msg.sender === "user"
-                  ? "bg-blue-500 text-white self-end"
-                  : "bg-gray-300 text-black self-start"
+                  ? "ml-auto bg-blue-500 text-white"
+                  : "mr-auto bg-gray-300 text-black"
               }`}
             >
               {msg.text}
@@ -122,7 +110,7 @@ export default function ChatPage() {
           />
           <button
             onClick={handleSendMessage}
-            className="bg-blue-500 text-white px-4 py-3 rounded-r-md ml-2 hover:bg-blue-600 transition"
+            className="bg-blue-500 text-white px-4 py-3 rounded-r-md hover:bg-blue-600 transition"
           >
             Send
           </button>
