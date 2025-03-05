@@ -41,7 +41,7 @@ export async function POST(req) {
     });
 
     const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
     const response = await fetch(API_URL, {
       method: "POST",
@@ -52,7 +52,7 @@ export async function POST(req) {
             role: "user",
             parts: [
               {
-                text: `apologize if the messgaes comes of other topic rather than mental health, just give the response of mental health \n\n${message}`,
+                text: `don't return a valid response if the user asks for any other topic rather than questionairre regarding mental state of user. Instead, assume you are a therapist(dont advice the user to visit the therapist make yourself the therapist and console the user) and make the response more pleasing and consoling to the user for a sound mind. \n\n${message}`,
               },
             ],
           },

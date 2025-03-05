@@ -34,7 +34,14 @@ export default function SummaryCharts() {
         }
 
         const response = await axios.get(`/api/get-chats?userId=${userId}`);
-        let summaryData = response.data.summary;
+        let summaryData = {
+          stress: 65,
+          peace: 30,
+          anxiety: 75,
+          depression: 40,
+          analysis:
+            "The user is experiencing significant anxiety related to stage fright, with stress levels also being moderately high. Their fear of public speaking or performance is likely contributing to a sense of unease and self-doubt. The request for solutions suggests that they are actively seeking ways to manage their fear, indicating a willingness to work on overcoming it. While their anxiety is pronounced, their peace of mind is relatively low, showing that this issue is affecting their emotional well-being. There are signs of mild depression, but it does not appear to be the dominant emotion in this case. The user acknowledges their feelings and is receptive to support, which is a positive indicator for their mental health improvement. Strategies like cognitive reframing, relaxation techniques, and gradual exposure could help them regain confidence and alleviate anxiety over time.",
+        };
 
         if (typeof summaryData === "string") {
           summaryData = summaryData.trim();
